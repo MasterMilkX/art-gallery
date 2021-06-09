@@ -1,0 +1,98 @@
+<html>
+	<head>
+		<title>Art Gallery Visualization</title>
+		<style>
+			body{
+				background-color:#efefef;
+				text-align:center;
+			}
+			/* divs and canvas */
+			#container{
+				width:70%;
+				height:80%;
+				margin:auto;
+				padding-left: 0;
+				padding-right: 0;
+			}
+			#gridCanvas{
+				width:100%;
+				height:80%;
+				display:block;
+				border:3px solid black;
+			}
+
+			/* settings and inner divs */
+			#settings{
+				width:100%;
+				height:20%;
+				text-align:center;
+				display:block;
+				background-color:#dedede;
+				border: 3px solid black;
+				border-top:none;
+			}
+
+			.inner{
+				width:34%;
+				height:100%;
+				border-right: 2px solid #787878;
+				display: block;
+				text-align:center;
+			}
+
+			#mapConfig button{
+				width:6em;
+				margin-left: 0.5em;
+				margin-right: 0.5em;
+				margin-top:0.5em;
+			}
+
+			#verticeCt, #guardCt{
+				margin-top: 0.5em;
+				font-size:1.05em;
+			}
+
+			#calculate button{
+				width:7.5em;
+				height:2em;
+				font-size:1em;
+				margin-left:0.5em;
+				margin-right:0.5em;
+				margin-top:1.25em;
+			}
+
+			/* buttons */
+
+
+		</style>
+		
+	</head>
+	<body>
+		<div style='font-size: 2em'>Art Gallery Visualizer</div>
+		<div style='font-size: 1em;color:#787878;margin-bottom: 1em'>by M Charity</div>
+		<div id='container'>
+			<canvas id='gridCanvas'>Unable to display canvas. Please change your browser.</canvas>
+			<div id='settings'>
+				<div style='display: flex;height:100%'>
+					<div class='inner' id='mapConfig'>
+						<div style='margin-top:0.5em;font-size:1.5em'>Map Size</div>
+						<button onclick='setCanvasSize("large",this)'>Large</button>
+						<button onclick='setCanvasSize("medium",this)'>Medium</button>
+						<button onclick='setCanvasSize("small",this)'>Small</button>
+					</div>
+					<div class='inner' id='values'>
+						<div id='verticeCt'>N: 16</div>
+						<div id='guardCt'>Guards: 3</div>
+					</div>
+					<div class='inner' style='border-right:none' id='calculate'>
+						<button>Place Guards</button>
+						<button>Recalculate</button>
+						<br><button>Save</button>
+						<button>Clear</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src='app.js'></script>
+	</body>
+</html>
