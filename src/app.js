@@ -52,6 +52,7 @@ var selVert = null;
 var selSeg = null;
 var verticeSet =  [];
 var lineSegSet = [];
+var segMatrix = {};
 
 var placedVert = false;
 var mouseHeld = false;
@@ -270,12 +271,12 @@ function deleteVertex(v){
 	for(let l=0;l<lineSegSet.length;l++){
 		let seg = lineSegSet[l];
 		if(seg.a == v || seg.b == v){
-			remSegs.push(l);
+			remSegs.push(seg);
 		}
 	}
 	//it's later - remove any bad segments
 	for(let l=0;l<remSegs.length;l++){
-		lineSegSet.splice(remSegs[l],1);
+		lineSegSet.splice(lineSegSet.indexOf(remSegs[l]),1);
 	}
 
 	//remove from vertex set
@@ -305,6 +306,11 @@ function addLineSegment(a,b){
 	lineSegSet.push(new seg(a,b));
 }
 
+function deleteSegment(s){
+	//remove from vertex set
+	lineSegSet.splice(lineSegSet.indexOf(s),1);
+}
+
 //check if a segment for a and b has been made already
 function segmentExists(a,b){
 	let fakeSeg = new seg(a,b);
@@ -328,8 +334,18 @@ function getSegment(a,b){
 }
 
 //draw a segment and place a vertice simultaneously
-function segmentAction(){
+function segmentAction(){	
 
+}
+
+function deleteAction(){
+	if(selVert){
+		deleteVertex(selVert);
+		selVert = null;
+	}else if(selSeg){
+		deleteSegment(selSeg);
+		selSeg = null;
+	}
 }
 
 
@@ -365,6 +381,15 @@ canvas.onmouseleave = function(e){
 	ghostVert.x = -1;
 	ghostVert.y = -1;
 }
+
+//determine if valud key to press
+document.body.addEventListener("keydown", function (e) {
+	//delete (backspace or D)
+	if(([8,68].indexOf(e.keyCode) > -1)){
+		deleteAction();
+	}
+});
+
 
 //app initialization function
 function init(){
