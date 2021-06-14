@@ -75,14 +75,14 @@
 			<div id='settings'>
 				<div style='display: flex;height:100%'>
 					<div class='inner' id='mapConfig'>
-						<div style='margin-top:0.5em;font-size:1.5em'>Map Size</div>
-						<button onclick='setCanvasSize("large",this)'>Large</button>
-						<button onclick='setCanvasSize("medium",this)'>Medium</button>
+						<div style='margin-top:0.5em;font-size:1.5em'>Cell Size</div>
 						<button onclick='setCanvasSize("small",this)'>Small</button>
+						<button onclick='setCanvasSize("medium",this)'>Medium</button>
+						<button onclick='setCanvasSize("large",this)'>Large</button>
 					</div>
 					<div class='inner' id='values'>
-						<div id='verticeCt'>N: 16</div>
-						<div id='guardCt'>Guards: 3</div>
+						<div id='verticeCt'>N: 0</div>
+						<div id='guardCt'>Guards: 0</div>
 					</div>
 					<div class='inner' style='border-right:none' id='calculate'>
 						<button>Place Guards</button>
@@ -95,5 +95,7 @@
 			<div id='debug'></div>
 		</div>
 		<script src='app.js'></script>
+		<!-- Load d3.js -->
+		<!-- <script src="https://d3js.org/d3.v4.js"></script> -->
 	</body>
 </html>

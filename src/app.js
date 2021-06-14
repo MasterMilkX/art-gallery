@@ -52,7 +52,7 @@ var selVert = null;
 var selSeg = null;
 var verticeSet =  [];
 var lineSegSet = [];
-var segMatrix = {};
+var segMatrix = new WeakMap();
 
 var placedVert = false;
 var mouseHeld = false;
@@ -64,11 +64,11 @@ var mouseHeld = false;
 var mapBtns = document.getElementById("mapConfig").getElementsByTagName("button");
 function setCanvasSize(size,b=null){
 	canvasSize = size;
-	if(canvasSize == "large"){
+	if(canvasSize == "small"){
 		cellSize = 32;
 	}else if(canvasSize == "medium"){
 		cellSize = 64;
-	}else if(canvasSize == "small"){
+	}else if(canvasSize == "large"){
 		cellSize = 128;
 	}
 
@@ -155,7 +155,7 @@ function render(){
 
 	//draw ghost line segment
 	if(ghostSeg != null){
-		drawLineSeg(ghostSeg, "dash");
+		drawLineSeg(ghostSeg, "dash", (ghostSeg.valid ? "#000" : "#f00"));
 	}
 
 	//draw real segments
@@ -215,7 +215,7 @@ function verticeAction(){
 	//create a segment from selected vertex to new vertex
 	else if(selVert != null && on_vertex(ghostVert) && !samePos(ghostVert,selVert)){
 		//make a new line
-		if(ghostSeg != null){
+		if(ghostSeg != null && ghostSeg.valid){
 			addLineSegment(ghostSeg.a, ghostSeg.b);
 			ghostSeg = null;
 			selVert = null;
@@ -243,7 +243,14 @@ function moveGhosts(ev){
   	//move ghost segment if a selected vertex exists
   	let vb = getVertex(x,y);
   	if(selVert != null && vb != null && !selVert.equals(vb) && !segmentExists(selVert,vb)){
-  		ghostSeg = new seg(selVert,vb)
+  		ghostSeg = new seg(selVert,vb);
+
+  		//determine if a valid segment (point has <2 segments already and does not intersect another line)
+  		if((segMatrix.get(selVert).length >= 2 || segMatrix.get(vb).length >= 2) || intersectsAny(ghostSeg)){
+  			ghostSeg.valid = false;
+  		}else{
+  			ghostSeg.valid = true;
+  		}
   	}else{
   		ghostSeg = null;
   	}
@@ -252,6 +259,7 @@ function moveGhosts(ev){
 //adds a vertex to the set to be apart of the polygon
 function addVertex(v){
 	verticeSet.push(v);
+	segMatrix.set(v, []);
 }
 
 //get vertex by x and y coordinates
@@ -303,19 +311,27 @@ function on_vertex(v){
 
 //create a line segment from vertex a to vertex b
 function addLineSegment(a,b){
-	lineSegSet.push(new seg(a,b));
+	let l = new seg(a,b);
+	lineSegSet.push(l);
+	segMatrix.get(a).push(l);
+	segMatrix.get(b).push(l);
 }
 
 function deleteSegment(s){
 	//remove from vertex set
 	lineSegSet.splice(lineSegSet.indexOf(s),1);
+	let sa = segMatrix.get(s.a)
+	sa.splice(sa.indexOf(s),1);
+	let sb = segMatrix.get(s.b)
+	sb.splice(sb.indexOf(s),1);
 }
 
 //check if a segment for a and b has been made already
 function segmentExists(a,b){
 	let fakeSeg = new seg(a,b);
-	for(let s=0;s<lineSegSet.length;s++){
-		let l = lineSegSet[s];
+	let segSet = segMatrix.get(a);
+	for(let s=0;s<segSet.length;s++){
+		let l = segSet[s];
 		if(l.equals(fakeSeg))
 			return true;
 	}
@@ -324,19 +340,65 @@ function segmentExists(a,b){
 
 //get the segment with the same endpoints
 function getSegment(a,b){
-	let fakeSeg = new seg(a,b);
-	for(let s=0;s<lineSegSet.length;s++){
-		let l = lineSegSet[s];
-		if(l.equals(fakeSeg))
+	let segSet = segMatrix.get(a);
+	for(let s=0;s<segSet.length;s++){
+		let l = segSet[s];
+		if(l.b.equals(b))
 			return l;
 	}
-	return null
+	return null;
 }
 
+//checks if a line intersects any other line
+function intersectsAny(s){
+	for(let i=0;i<lineSegSet.length;i++){
+		let s2 = lineSegSet[i];
+		if(s.equals(s2))		//same segment
+			continue;
+
+		if(intersects(s,s2))	//found intersection
+			return true;
+	}
+	return false;
+}
+
+//checks if segment m intersects segment n
+//from https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
+function intersects(m,n){
+	var det, gamma, lambda;
+	let a = m.a.x;
+	let b = m.a.y;
+	let c = m.b.x;
+	let d = m.b.y;
+	let p = n.a.x;
+	let q = n.a.y;
+	let r = n.b.x;
+	let s = n.b.y;
+
+	det = (c - a) * (s - q) - (r - p) * (d - b);		//determinant of the square points
+	if (det === 0) {		//parallel lines
+		return false;
+	} else {
+		lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;		//point of intersection on s
+		gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;		//point of intersection on t
+		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);		//point is on both line segments and not out of bounds
+	}
+}
+
+/*
 //draw a segment and place a vertice simultaneously
 function segmentAction(){	
-
+	if(selVert != null && on_vertex(ghostVert) && !samePos(ghostVert,selVert)){
+		//make a new line
+		if(ghostSeg != null){
+			addLineSegment(ghostSeg.a, ghostSeg.b);
+			ghostSeg = null;
+			selVert = null;
+			return;
+		}
+	}
 }
+*/
 
 function deleteAction(){
 	if(selVert){
@@ -348,6 +410,10 @@ function deleteAction(){
 	}
 }
 
+//update information about the polygon
+function polygonStats(){
+	document.getElementById("verticeCt").innerHTML = "N: " + verticeSet.length;
+}
 
 
 ////////////////////////////////////    APP EVENTS AND LOOP FUNCTIONS    ////////////////////////////////////
@@ -364,8 +430,6 @@ canvas.onmousedown = function(e){
 	if(!placedVert){
 		placedVert = true;
 		verticeAction();
-	}else{
-		segmentAction();
 	}
 	mouseHeld = true;
 
@@ -374,6 +438,9 @@ canvas.onmousedown = function(e){
 canvas.onmouseup = function(e){
 	placedVert = false;
 	mouseHeld = false;
+
+	//update stats
+	polygonStats();
 }
 
 //detect when cursor moves off screen
@@ -393,7 +460,7 @@ document.body.addEventListener("keydown", function (e) {
 
 //app initialization function
 function init(){
-	setCanvasSize("small",mapBtns[2]);
+	setCanvasSize("large",mapBtns[2]);
 }
 
 //update loop
