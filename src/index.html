@@ -61,6 +61,12 @@
 				margin-top:1.25em;
 			}
 
+			#errorMsg{
+				color:red;
+				font-size:1.5em;
+				margin-top:0.75em;
+			}
+
 			/* buttons */
 
 
@@ -78,11 +84,15 @@
 						<div style='margin-top:0.5em;font-size:1.5em'>Cell Size</div>
 						<button onclick='setCanvasSize("small",this)'>Small</button>
 						<button onclick='setCanvasSize("medium",this)'>Medium</button>
-						<button onclick='setCanvasSize("large",this)'>Large</button>
+						<button onclick='setCanvasSize("large",this)' style='background-color:#ff0'>Large</button>
 					</div>
 					<div class='inner' id='values'>
-						<div id='verticeCt'>N: 0</div>
-						<div id='guardCt'>Guards: 0</div>
+						<div style='display:inline-flex;width:100%'>
+							<div id='verticeCt' style='width:50%'>N: 0</div>
+							<div id='guardCt' style='width:50%'>Guards: 0</div>
+						</div>
+						<button onclick='makePolygon()' style='margin-top: 1em'>Make Polygon</button>
+						<div id='errorMsg'></div>
 					</div>
 					<div class='inner' style='border-right:none' id='calculate'>
 						<button>Place Guards</button>

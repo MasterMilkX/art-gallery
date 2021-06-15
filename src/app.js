@@ -48,11 +48,15 @@ function seg(a,b){
 }
 var ghostVert = new v(-1,-1);
 var ghostSeg = null;
+
 var selVert = null;
 var selSeg = null;
+
 var verticeSet =  [];
 var lineSegSet = [];
 var segMatrix = new WeakMap();
+
+var polygon = null;
 
 var placedVert = false;
 var mouseHeld = false;
@@ -116,6 +120,22 @@ function drawLineSeg(s,sty='solid',color='#000'){
 	gtx.setLineDash([]);
 }
 
+//draw the main polygon 
+//extended from: https://stackoverflow.com/questions/4839993/how-to-draw-polygons-on-an-html5-canvas
+function drawWholePolygon(){
+	//no polygon to draw
+	if(polygon == null)
+		return;
+
+	gtx.fillStyle = '#cdcdcd';
+	gtx.beginPath();
+	gtx.moveTo(polygon[0].x*cellSize, polygon[0].y*cellSize);
+	for(let v=1;v<polygon.length;v++){
+		gtx.lineTo(polygon[v].x*cellSize, polygon[v].y*cellSize);
+	}
+	gtx.fill();
+}
+
 
 //clears the entire grid of vertices and segments
 function clearGrid(){
@@ -130,7 +150,7 @@ function render(){
 	gtx.save();
 	gtx.clearRect(0,0,canvas.width,canvas.height);
 
-	//draw background + grid lines
+	///// BACKGROUND + GRID LINES
 	gtx.fillStyle = "#ffffff";
 	gtx.fillRect(0,0,canvas.width,canvas.height);
 
@@ -151,6 +171,18 @@ function render(){
 		gtx.stroke();
 	}
 
+
+
+
+	///// POLYGONS
+
+	//draw the entire polygon
+	if(polygon != null)
+		drawWholePolygon();
+
+
+
+
 	///// LINE SEGMENTS
 
 	//draw ghost line segment
@@ -166,6 +198,8 @@ function render(){
 	//draw selected segment
 	if(selSeg != null)
 		drawLineSeg(selSeg, "solid", "#0f0");
+
+
 
 
 	///// VERTICES
@@ -184,7 +218,12 @@ function render(){
 		drawVertex(vi,vi.color);
 	}
 
+
 	gtx.restore();
+}
+
+function setErrorMsg(s){
+	document.getElementById("errorMsg").innerHTML = s;
 }
 
 ////////////////////////////////////////    GEOMETRIC FUNCTIONS     ///////////////////////////////////
@@ -194,6 +233,7 @@ function render(){
 //determine whether to place a new vertex, select a vertex, deselect a vertex, or create a segment
 function verticeAction(){
 	selSeg = null;
+	setErrorMsg("");
 
 	//empty spot? place a new vertex
 	if(!on_vertex(ghostVert)){
@@ -202,13 +242,13 @@ function verticeAction(){
 	}
 	//select a vertex
 	else if(selVert == null){
-		console.log("select");
+		//console.log("select");
 		selVert = getVertex(ghostVert.x, ghostVert.y);
 		return;
 	}
 	//deselect a vertex
 	else if(samePos(ghostVert,selVert)){
-		console.log("deselect");
+		//console.log("deselect");
 		selVert = null;
 		return;
 	}
@@ -285,10 +325,15 @@ function deleteVertex(v){
 	//it's later - remove any bad segments
 	for(let l=0;l<remSegs.length;l++){
 		lineSegSet.splice(lineSegSet.indexOf(remSegs[l]),1);
+		let sa = segMatrix.get(remSegs[l].a)
+		sa.splice(sa.indexOf(remSegs[l]),1);
+		let sb = segMatrix.get(remSegs[l].b)
+		sb.splice(sb.indexOf(remSegs[l]),1);
 	}
 
 	//remove from vertex set
 	verticeSet.splice(verticeSet.indexOf(v),1);
+	segMatrix.delete(v)
 }
 
 //check if 2 vertices are on the same position
@@ -318,7 +363,7 @@ function addLineSegment(a,b){
 }
 
 function deleteSegment(s){
-	//remove from vertex set
+	//remove from segement set
 	lineSegSet.splice(lineSegSet.indexOf(s),1);
 	let sa = segMatrix.get(s.a)
 	sa.splice(sa.indexOf(s),1);
@@ -340,10 +385,11 @@ function segmentExists(a,b){
 
 //get the segment with the same endpoints
 function getSegment(a,b){
+	let fakeSeg = new seg(a,b);
 	let segSet = segMatrix.get(a);
 	for(let s=0;s<segSet.length;s++){
 		let l = segSet[s];
-		if(l.b.equals(b))
+		if(l.equals(fakeSeg))
 			return l;
 	}
 	return null;
@@ -399,6 +445,71 @@ function segmentAction(){
 	}
 }
 */
+
+
+// POLYGONS
+
+//check if all of the points in the vertice set form a valid polygon
+function makePolygon(){
+	if(verticeSet.length == 0){
+		setErrorMsg("No vertices on map!");
+		return null;
+	}
+
+	//all vertices should have exactly 2 edges (otherwise not a single polygon)
+	for(let v=0;v<verticeSet.length;v++){
+		if(segMatrix.get(verticeSet[v]).length != 2){
+			setErrorMsg("Unconnected vertices!");
+			return null;
+		}
+	}
+
+	//should form a looped perimeter
+	let startPt = verticeSet[Math.floor(Math.random()*verticeSet.length)];	//get a random start point
+	let adjPts = getNeighbors(startPt);
+	let curPt = adjPts[0];
+	let parentPt = startPt;
+	let path = [startPt];
+	let c = 1;
+	while(c < (verticeSet.length+1) && !curPt.equals(startPt)){
+		path.push(curPt);
+		adjPts = getNeighbors(curPt);
+		let oldCur = curPt;
+		curPt = (adjPts[0].equals(parentPt) ? adjPts[1] : adjPts[0]);
+		parentPt = oldCur;
+		c++;
+	}
+
+	//too many polygons on screen
+	if(c != verticeSet.length){
+		setErrorMsg("More than one polygons on the canvas!");
+		console.log(path);
+		return null;
+	}
+	//full polygon
+	else if(curPt.equals(startPt)){
+		console.log("valid polygon!");
+		polygon = path;
+		return path;
+	}
+
+}
+
+//get the adjacent vertice neighbors of a point (assuming 2 connected segments)
+function getNeighbors(v){
+	let segs = segMatrix.get(v);
+	let adjV = [];
+	for(let s=0;s<segs.length;s++){
+		let seg = segs[s];
+		if(seg.a.equals(v))
+			adjV.push(seg.b);
+		else
+			adjV.push(seg.a);
+	}
+	return adjV;
+}
+
+
 
 function deleteAction(){
 	if(selVert){
