@@ -236,7 +236,7 @@ function verticeAction(){
 	setErrorMsg("");
 
 	//empty spot? place a new vertex
-	if(!on_vertex(ghostVert)){
+	if(!on_vertex(ghostVert) && !on_line(ghostVert)){
 		addVertex(new v(ghostVert.x, ghostVert.y, "#000"));
 		return;
 	}
@@ -279,6 +279,12 @@ function moveGhosts(ev){
 
   	ghostVert.x = x;
   	ghostVert.y = y;
+  	/*
+  	if(on_line(ghostVert))
+  		ghostVert.valid = false;
+  	else
+  		ghostVert.valid = true;
+  	*/
 
   	//move ghost segment if a selected vertex exists
   	let vb = getVertex(x,y);
@@ -431,20 +437,89 @@ function intersects(m,n){
 	}
 }
 
-/*
-//draw a segment and place a vertice simultaneously
-function segmentAction(){	
-	if(selVert != null && on_vertex(ghostVert) && !samePos(ghostVert,selVert)){
-		//make a new line
-		if(ghostSeg != null){
-			addLineSegment(ghostSeg.a, ghostSeg.b);
-			ghostSeg = null;
-			selVert = null;
-			return;
+//replaces a 3-verticed straight line segment and makes it into a 2-verticed single line segment
+function removeStraight(){
+	//check if a vertice is in the middle of 3 segments that are straight (mark for removal)
+	let rep = [];
+	for(let i=0;i<verticeSet.length;i++){
+		let v = verticeSet[i];
+		let adj = getNeighbors(v);
+		if(sameSlope(adj[0],v,adj[1])){
+			rep.push(v);
 		}
 	}
+
+	//replace all of the middle vertices
+	for(let j=0;j<rep.length;j++){
+		let v = rep[j];
+		let adj = getNeighbors(v);
+		deleteVertex(v);
+		addLineSegment(adj[0],adj[1]);
+	}
 }
-*/
+
+
+//determine if 2 vertices have same x or y value
+function isStraight(a,b){
+	return a.x == b.x || a.y == b.y;
+}
+
+//get slope of two points
+function slope(a,b){
+	let m1 = (b.y-a.y);
+	let m2 = ((b.x-a.x) == 0 ? 0 : b.x-a.x);
+	return m2 == 0 ? null : -m1 / m2;
+}
+
+//gets the slope of a line
+function lineSlope(l){
+	return slope(l.a,l.b);
+}
+
+//determine if 3 points (adjacent) have the same slope
+function sameSlope(a,b,c){
+	return slope(a,b) == slope(b,c);
+}
+
+//check if a vertex is placed on a line
+//from https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points/11912171#11912171
+function on_line(v){
+	for(let i=0;i<lineSegSet.length;i++){
+		let l = lineSegSet[i];
+		let dxc = v.x - l.a.x;
+		let dyc = v.y - l.a.y;
+
+		let dxl = l.b.x - l.a.x;
+		let dyl = l.b.y - l.a.y;
+
+		let cross = dxc * dyl - dyc * dxl;
+		//not on the line at all
+		if(cross != 0)
+			continue;
+
+		//more horizontal
+		if (Math.abs(dxl) >= Math.abs(dyl)){
+			if( dxl > 0 && l.a.x <= v.x && v.x <= l.b.x){
+				return true;
+			}
+			else if(dxl <= 0 && l.b.x <= v.x && v.x <= l.a.x){
+				return true;
+			}
+		}
+		//more vertical
+		else{
+			if( dyl > 0 && l.a.y <= v.y && v.y <= l.b.y){
+				return true;
+			}
+			else if(dyl <= 0 && l.b.y <= v.y && v.y <= l.a.y){
+				return true;
+			}
+		}
+
+	}
+	return false;
+}
+
 
 
 // POLYGONS
@@ -464,6 +539,9 @@ function makePolygon(){
 		}
 	}
 
+	//remove any straight vertices
+	removeStraight();
+
 	//should form a looped perimeter
 	let startPt = verticeSet[Math.floor(Math.random()*verticeSet.length)];	//get a random start point
 	let adjPts = getNeighbors(startPt);
@@ -471,6 +549,7 @@ function makePolygon(){
 	let parentPt = startPt;
 	let path = [startPt];
 	let c = 1;
+	//continue around until either all points have been examined or you start at the beginning
 	while(c < (verticeSet.length+1) && !curPt.equals(startPt)){
 		path.push(curPt);
 		adjPts = getNeighbors(curPt);
