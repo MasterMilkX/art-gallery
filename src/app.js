@@ -13,7 +13,7 @@ var debug = document.getElementById("debug");
 
 //polygon properties
 //vertex class (x and y are the coordinates, color is the interior fill color of the point)
-function v(x,y,c="#565656"){
+function ver(x,y,c="#565656"){
 	this.x = x;
 	this.y = y;
 	this.color = c;
@@ -46,7 +46,7 @@ function seg(a,b){
 		return a.equals(o.a) && b.equals(o.b);
 	}
 }
-var ghostVert = new v(-1,-1);
+var ghostVert = new ver(-1,-1);
 var ghostSeg = null;
 
 var selVert = null;
@@ -57,6 +57,8 @@ var lineSegSet = [];
 var segMatrix = new WeakMap();
 
 var polygon = null;
+var triangles = null;
+let triColor = ["#f00", "#0f0", "#00f"];
 
 var placedVert = false;
 var mouseHeld = false;
@@ -109,9 +111,9 @@ function drawVertex(v,color='#676767'){
 }
 
 //draws a line segment on the canvas
-function drawLineSeg(s,sty='solid',color='#000'){
+function drawLineSeg(s,sty='solid',color='#000', thick='3'){
 	gtx.strokeStyle = color;
-	gtx.lineWidth = '3';
+	gtx.lineWidth = thick;
 	gtx.beginPath();
 	gtx.setLineDash((sty == "solid" ? [] : [5, 5]));
 	gtx.moveTo(s.a.x*cellSize, s.a.y*cellSize);
@@ -136,12 +138,37 @@ function drawWholePolygon(){
 	gtx.fill();
 }
 
+//draws a sub polygon
+function drawTriangle(t, color, lines=false, alpha=0.8){
+	gtx.fillStyle = color;
+	gtx.beginPath();
+	gtx.moveTo(t[0].x*cellSize, t[0].y*cellSize);
+	for(let v=1;v<t.length;v++){
+		gtx.lineTo(t[v].x*cellSize, t[v].y*cellSize);
+	}
+	
+	gtx.globalAlpha = alpha;
+	gtx.fill();
+	gtx.globalAlpha = 1.0;
+
+	//draw lines on top
+	if(lines){
+		drawLineSeg(new seg(t[0],t[1]),'solid','#000','1');
+		drawLineSeg(new seg(t[1],t[2]),'solid','#000','1');
+		drawLineSeg(new seg(t[2],t[0]),'solid','#000','1');
+		
+	}
+}
+
 
 //clears the entire grid of vertices and segments
 function clearGrid(){
 	if(confirm("Are you sure you want to clear the grid?")){
 		verticeSet = [];
 		lineSegSet = [];
+		segMatrix = new WeakMap();
+		polygon = null;
+		triangles = null;
 	}
 }
 
@@ -200,6 +227,14 @@ function render(){
 		drawLineSeg(selSeg, "solid", "#0f0");
 
 
+	///// TRIANGULATIONS
+	if(triangles != null){
+		for(let t=0;t<triangles.length;t++){
+			drawTriangle(triangles[t],triColor[t%triColor.length],true);
+		}
+	}
+
+
 
 
 	///// VERTICES
@@ -237,7 +272,7 @@ function verticeAction(){
 
 	//empty spot? place a new vertex
 	if(!on_vertex(ghostVert) && !on_line(ghostVert)){
-		addVertex(new v(ghostVert.x, ghostVert.y, "#000"));
+		addVertex(new ver(ghostVert.x, ghostVert.y, "#000"));
 		return;
 	}
 	//select a vertex
@@ -604,6 +639,41 @@ function deleteAction(){
 function polygonStats(){
 	document.getElementById("verticeCt").innerHTML = "N: " + verticeSet.length;
 }
+
+
+////////////////////////////////////     TRIANGULATION AND 3-COLORING     ////////////////////////////////////
+
+//triangulates the polygon
+function triangulate(){
+	if(polygon == null && !makePolygon())
+		return;
+		
+
+	//convert to earcut library format
+	let earpoly = [];
+	for(let e=0;e<polygon.length;e++){
+		earpoly.push(polygon[e].x);
+		earpoly.push(polygon[e].y);
+	}
+
+	//triangulate and convert back to vertex point system
+	let cut_tri = earcut(earpoly);
+	//console.log(cut_tri);
+	let conv_tri = [];
+	for(let i=0;i<cut_tri.length;i+=3){
+		let t = [];
+		t.push(polygon[cut_tri[i]])
+		t.push(polygon[cut_tri[i+1]])
+		t.push(polygon[cut_tri[i+2]])
+		conv_tri.push(t);
+	}
+
+
+	triangles = conv_tri;
+	return conv_tri;
+}
+
+
 
 
 ////////////////////////////////////    APP EVENTS AND LOOP FUNCTIONS    ////////////////////////////////////

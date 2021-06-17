@@ -71,6 +71,10 @@
 
 
 		</style>
+
+
+		<!-- LIBRARIES -->
+		<script src='https://unpkg.com/earcut@2.2.2/dist/earcut.min.js'></script>		<!-- earcut for triangulation -->
 		
 	</head>
 	<body>
@@ -92,6 +96,7 @@
 							<div id='guardCt' style='width:50%'>Guards: 0</div>
 						</div>
 						<button onclick='makePolygon()' style='margin-top: 1em'>Make Polygon</button>
+						<button onclick='triangulate()' style='margin-top: 1em'>Triangulate</button>
 						<div id='errorMsg'></div>
 					</div>
 					<div class='inner' style='border-right:none' id='calculate'>
@@ -105,7 +110,5 @@
 			<div id='debug'></div>
 		</div>
 		<script src='app.js'></script>
-		<!-- Load d3.js -->
-		<!-- <script src="https://d3js.org/d3.v4.js"></script> -->
 	</body>
 </html>
