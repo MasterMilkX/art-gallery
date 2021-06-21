@@ -62,6 +62,7 @@ let triColor = ["#f00", "#0f0", "#00f"];
 
 var placedVert = false;
 var mouseHeld = false;
+var graphChanged = false;
 
 
 ///////////////////////////     GRID RENDERING FUNCTIONS     ///////////////////////////////
@@ -160,6 +161,13 @@ function drawTriangle(t, color, lines=false, alpha=0.8){
 	}
 }
 
+//don't fill the triangle, only draw the outlines
+function outlineTriangle(t){
+	drawLineSeg(new seg(t[0],t[1]),'solid','#000','1');
+	drawLineSeg(new seg(t[1],t[2]),'solid','#000','1');
+	drawLineSeg(new seg(t[2],t[0]),'solid','#000','1');
+}
+
 
 //clears the entire grid of vertices and segments
 function clearGrid(){
@@ -170,6 +178,13 @@ function clearGrid(){
 		polygon = null;
 		triangles = null;
 	}
+}
+
+//removes polygons, triangulations, and 3-colorings
+function clearPolygons(){
+	polygon = null;
+	triangles = null;
+	resetVerticeColors();
 }
 
 //draw on the canvas
@@ -230,7 +245,8 @@ function render(){
 	///// TRIANGULATIONS
 	if(triangles != null){
 		for(let t=0;t<triangles.length;t++){
-			drawTriangle(triangles[t],triColor[t%triColor.length],true);
+			//drawTriangle(triangles[t],triColor[t%triColor.length],true);
+			outlineTriangle(triangles[t]);
 		}
 	}
 
@@ -269,6 +285,7 @@ function setErrorMsg(s){
 function verticeAction(){
 	selSeg = null;
 	setErrorMsg("");
+	graphChanged = true;
 
 	//empty spot? place a new vertex
 	if(!on_vertex(ghostVert) && !on_line(ghostVert)){
@@ -390,6 +407,13 @@ function on_vertex(v){
 			return true;
 	}
 	return false;
+}
+
+//resets the colors of all of the vertices back to black
+function resetVerticeColors(){
+	for(let v=0;v<verticeSet.length;v++){
+		verticeSet[v].color = "#000";
+	}
 }
 
 
@@ -561,6 +585,8 @@ function on_line(v){
 
 //check if all of the points in the vertice set form a valid polygon
 function makePolygon(){
+	resetVerticeColors();		//make all vertices black
+	
 	if(verticeSet.length == 0){
 		setErrorMsg("No vertices on map!");
 		return null;
@@ -607,6 +633,9 @@ function makePolygon(){
 		return path;
 	}
 
+	polygonStats();
+	graphChanged = false;
+
 }
 
 //get the adjacent vertice neighbors of a point (assuming 2 connected segments)
@@ -645,9 +674,8 @@ function polygonStats(){
 
 //triangulates the polygon
 function triangulate(){
-	if(polygon == null && !makePolygon())
-		return;
-		
+	if(polygon == null || graphChanged)
+		makePolygon();
 
 	//convert to earcut library format
 	let earpoly = [];
@@ -673,7 +701,64 @@ function triangulate(){
 	return conv_tri;
 }
 
+//perform 3-coloring on the triangulation
+function color3(){
+	if(triangles == null || graphChanged)
+		triangulate();
 
+	//pick arbitrary first triangle to color
+	let t1 = triangles[Math.floor(Math.random(triangles.length))];
+	console.log(t1);
+
+	//color every vertice
+	while(t1 != null){
+		let availColors = [...triColor];		//colors to use on the triangle
+
+		//remove any colors already in the triangle
+		for(let v=0;v<3;v++){
+			let ci = availColors.indexOf(t1[v].color)
+			if(ci != -1){
+				availColors.splice(ci,1);
+			}
+		}
+
+		let c = 0;
+		for(let i=0;i<t1.length;i++){
+			if(t1[i].color != "#000")	//already colored so skip
+				continue;
+			t1[i].color = availColors[c];
+			c++;
+		}
+
+		//next triangle with uncolored vertices
+		t1 = mostColored();
+	}
+
+}
+
+//find triangle with most (but not all) colored vertices
+//if a triangle has 2 colored, return it
+function mostColored(){
+	let colorT = null;
+	for(let t=0;t<triangles.length;t++){
+		let vc = vertColored(triangles[t]);
+		if(vc == 2)
+			return triangles[t];
+		else if(vc == 1 && colorT == null)
+			colorT = triangles[t];
+	}
+	return colorT;
+}
+
+//returns number of vertices the are colored for a triangle
+function vertColored(t){
+	return t.filter(x => x.color != "#000").length;
+}
+
+//return the uncolored vertices
+function uncolored(t){
+	return t.filter(x => x.color == "#000");
+}
 
 
 ////////////////////////////////////    APP EVENTS AND LOOP FUNCTIONS    ////////////////////////////////////
