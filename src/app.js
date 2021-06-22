@@ -60,6 +60,11 @@ var polygon = null;
 var triangles = null;
 let triColor = ["#f00", "#0f0", "#00f"];
 
+var guardSet = null;
+var activeGuardColor = "";
+var guardTriangles = {};
+var suffGuards = 0;			//sufficient number of guards lowerbound(n/3)
+
 var placedVert = false;
 var mouseHeld = false;
 var graphChanged = false;
@@ -177,6 +182,10 @@ function clearGrid(){
 		segMatrix = new WeakMap();
 		polygon = null;
 		triangles = null;
+		suffGuards = 0;
+		polygonStats();
+		resetGuards();
+		resetVerticeColors();
 	}
 }
 
@@ -184,6 +193,7 @@ function clearGrid(){
 function clearPolygons(){
 	polygon = null;
 	triangles = null;
+	resetGuards();
 	resetVerticeColors();
 }
 
@@ -246,7 +256,19 @@ function render(){
 	if(triangles != null){
 		for(let t=0;t<triangles.length;t++){
 			//drawTriangle(triangles[t],triColor[t%triColor.length],true);
-			outlineTriangle(triangles[t]);
+			if(activeGuardColor == "")
+				outlineTriangle(triangles[t]);
+		}
+	}
+
+	//show the guards
+	if(activeGuardColor != ""){
+		let guards = Object.keys(guardTriangles);
+		for(let g=0;g<guards.length;g++){
+			let curGuard = guardTriangles[guards[g]];
+			for(let t=0;t<curGuard.area.length;t++){
+				drawTriangle(curGuard.area[t],curGuard.guardColor,false);
+			}
 		}
 	}
 
@@ -266,7 +288,17 @@ function render(){
 	//draw real vertices
 	for(let v=0;v<verticeSet.length;v++){
 		let vi = verticeSet[v];
-		drawVertex(vi,vi.color);
+		//only draw guard vertices
+		if(vi.color == activeGuardColor){
+			let guards = guardSet[activeGuardColor];
+			if(guards.indexOf(vi) != -1)
+				drawVertex(vi,vi.color);
+		}
+		//draw all vertices
+		else if(activeGuardColor == ""){
+			drawVertex(vi,vi.color);
+		}
+		
 	}
 
 
@@ -282,10 +314,11 @@ function setErrorMsg(s){
 //VERTICES
 
 //determine whether to place a new vertex, select a vertex, deselect a vertex, or create a segment
-function verticeAction(){
+function vertexAction(){
 	selSeg = null;
 	setErrorMsg("");
 	graphChanged = true;
+	resetGuards();
 
 	//empty spot? place a new vertex
 	if(!on_vertex(ghostVert) && !on_line(ghostVert)){
@@ -586,9 +619,15 @@ function on_line(v){
 //check if all of the points in the vertice set form a valid polygon
 function makePolygon(){
 	resetVerticeColors();		//make all vertices black
-	
+	resetGuards();
+
 	if(verticeSet.length == 0){
 		setErrorMsg("No vertices on map!");
+		return null;
+	}
+
+	if(verticeSet.length < 3){
+		setErrorMsg("Not enough vertices on map!");
 		return null;
 	}
 
@@ -630,12 +669,15 @@ function makePolygon(){
 	else if(curPt.equals(startPt)){
 		console.log("valid polygon!");
 		polygon = path;
+		
+		graphChanged = false;
+		suffGuards = Math.floor(verticeSet.length/3);		//by Chvatal's proof, the sufficient # of guards is lower-bound n/3
+		polygonStats();
+
 		return path;
 	}
 
-	polygonStats();
-	graphChanged = false;
-
+	
 }
 
 //get the adjacent vertice neighbors of a point (assuming 2 connected segments)
@@ -653,7 +695,7 @@ function getNeighbors(v){
 }
 
 
-
+//delete a selected segment or vertice 
 function deleteAction(){
 	if(selVert){
 		deleteVertex(selVert);
@@ -667,6 +709,7 @@ function deleteAction(){
 //update information about the polygon
 function polygonStats(){
 	document.getElementById("verticeCt").innerHTML = "N: " + verticeSet.length;
+	document.getElementById("guardCt").innerHTML = "Sufficient Guards: " + suffGuards;
 }
 
 
@@ -708,7 +751,6 @@ function color3(){
 
 	//pick arbitrary first triangle to color
 	let t1 = triangles[Math.floor(Math.random(triangles.length))];
-	console.log(t1);
 
 	//color every vertice
 	while(t1 != null){
@@ -733,6 +775,8 @@ function color3(){
 		//next triangle with uncolored vertices
 		t1 = mostColored();
 	}
+
+	sortGuards();
 
 }
 
@@ -760,6 +804,72 @@ function uncolored(t){
 	return t.filter(x => x.color == "#000");
 }
 
+//group the guards by vertice colors
+function sortGuards(){
+	guardSet = {"#f00":[], "#0f0":[], "#00f":[]};		//reset guard placements
+	for(let v=0;v<verticeSet.length;v++){
+		guardSet[verticeSet[v].color].push(verticeSet[v]);
+	}
+}
+
+//converts an integer to hexadecimal
+function int2hex(i){
+	return i.toString(16).padStart(2, '0');
+}
+
+
+//find the vertice of a triangle that has the specified color
+function triVCol(t,c){
+	for(let i=0;i<3;i++){
+		if(t[i].color == c)
+			return t[i];
+	}
+	return null;
+}
+
+//activate guards and show their range of view
+function activateGuards(color){
+	if(guardSet == null){
+		color3();
+	}
+
+	guardTriangles = {};
+	let colorGuards = guardSet[color];
+
+	//make all set of color variations from 0-255 of the other alphas
+	let o = Math.floor(255/colorGuards.length);		//increments of color
+	let cset = [];
+	for(let c=0;c<colorGuards.length;c++){
+		let c2 = int2hex(c*o);
+		if(color == "#f00")
+			cset.push("#ff"+c2+c2);
+		else if(color == "#0f0")
+			cset.push("#"+c2+"ff"+c2);
+		else if(color == "#00f")
+			cset.push("#"+c2+c2+"ff");
+	}	
+	//console.log(cset);
+
+	//add all vertices of guard color
+	for(let v=0;v<colorGuards.length;v++){
+		guardTriangles[v] = {guardColor:cset[v], area:[]};
+	}
+
+	//add triangles connected to each guard to represent view area
+	for(let t=0;t<triangles.length;t++){
+		let tri = triangles[t];
+		let myGuard = triVCol(tri,color);
+		guardTriangles[colorGuards.indexOf(myGuard)].area.push(triangles[t]);
+	}
+	activeGuardColor = color;
+}
+
+function resetGuards(){
+	activeGuardColor = "";
+	guardSet = null;
+	guardTriangles = {};
+}
+
 
 ////////////////////////////////////    APP EVENTS AND LOOP FUNCTIONS    ////////////////////////////////////
 
@@ -774,7 +884,7 @@ canvas.onmousedown = function(e){
 	//place a new vertex
 	if(!placedVert){
 		placedVert = true;
-		verticeAction();
+		vertexAction();
 	}
 	mouseHeld = true;
 

@@ -58,8 +58,6 @@
 				margin-top:0.75em;
 			}
 
-			/* buttons */
-
 
 		</style>
 
@@ -81,8 +79,8 @@
 						<button onclick='setCanvasSize("medium",this)'>Medium</button>
 						<button onclick='setCanvasSize("large",this)' style='background-color:#ff0'>Large</button>
 						<div style='display:inline-flex;width:100%;margin-top:1em'>
-							<div id='verticeCt' style='width:50%'>N: 0</div>
-							<div id='guardCt' style='width:50%'>Guards: 0</div>
+							<div id='verticeCt' style='width:40%'>N: 0</div>
+							<div id='guardCt' style='width:60%'>Sufficient Guards: 0</div>
 						</div>
 					</div>
 					<div class='inner' id='values'>
@@ -98,13 +96,13 @@
 					</div>
 					<div class='inner' style='border-right:none'>
 						<div style='margin-top:1.5em'>
-							<button style='background-color: #E75050'>Red Guards</button>
-							<button style='background-color: #55E750'>Green Guards</button>
-							<button style='background-color: #5077E7'>Blue Guards</button>
+							<button id='redGuard' style='background-color: #E75050' onclick='activateGuards("#f00")'>Red Guards</button>
+							<button id='greenGuard' style='background-color: #55E750' onclick='activateGuards("#0f0")'>Green Guards</button>
+							<button id='blueGuard' style='background-color: #5077E7' onclick='activateGuards("#00f")'>Blue Guards</button>
 						</div>
 						<br>
 						<div style='margin:auto'>
-							<button>Reset Guard Colors</button>
+							<button onclick='resetGuards()'>Reset Guard Colors</button>
 							<button>Save as PNG</button>
 						</div>
 					</div>
