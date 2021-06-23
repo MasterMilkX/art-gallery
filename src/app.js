@@ -984,4 +984,10 @@ function main(){
 	}
 }
 
+var saveBtn = document.getElementById('downloadArt');
+saveBtn.addEventListener('click', function (e) {
+    var dataURL = gridCanvas.toDataURL('image/png');
+    saveBtn.href = dataURL;
+});
+
 main();
