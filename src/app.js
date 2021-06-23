@@ -618,6 +618,7 @@ function on_line(v){
 
 //check if all of the points in the vertice set form a valid polygon
 function makePolygon(){
+	clearPolygons();
 	resetVerticeColors();		//make all vertices black
 	resetGuards();
 
@@ -715,30 +716,84 @@ function polygonStats(){
 
 ////////////////////////////////////     TRIANGULATION AND 3-COLORING     ////////////////////////////////////
 
+//same 2 triangles
+function sameTriangle(a,b){
+	return b.indexOf(a[0]) != -1 && b.indexOf(a[1]) != -1 && b.indexOf(a[2]) != -1;
+}
+
+//same set of triangles
+function sameTriangulation(t1,t2){
+	if(t1.length != t2.length)
+		return false;
+	for(let i=0;i<t1.length;i++){
+		let flag = false;
+		for(let j=0;j<t2.length;j++){
+			if(sameTriangle(t1[i],t2[j]))
+				flag = true;
+		}
+		if(!flag)
+			return false;
+	}
+	return true;
+}
+
+function shuffleArr(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+let rs = 0;
+
 //triangulates the polygon
 function triangulate(){
+	resetVerticeColors();
 	if(polygon == null || graphChanged)
 		makePolygon();
 
-	//convert to earcut library format
-	let earpoly = [];
-	for(let e=0;e<polygon.length;e++){
-		earpoly.push(polygon[e].x);
-		earpoly.push(polygon[e].y);
-	}
 
-	//triangulate and convert back to vertex point system
-	let cut_tri = earcut(earpoly);
-	//console.log(cut_tri);
 	let conv_tri = [];
-	for(let i=0;i<cut_tri.length;i+=3){
-		let t = [];
-		t.push(polygon[cut_tri[i]])
-		t.push(polygon[cut_tri[i+1]])
-		t.push(polygon[cut_tri[i+2]])
-		conv_tri.push(t);
-	}
+	
 
+	for(let f=0;f<100;f++){
+
+		//randomize start position of polygon for different triangulations
+		let randStart = 0;
+		do{
+			randStart = Math.floor(Math.random()*polygon.length);
+		}while(randStart == rs);
+		rs = randStart;
+
+		//make new polygon from alternate starting position
+		let newPolygon = [];
+		for(let e=0;e<polygon.length;e++){
+			let i = (e+randStart) % polygon.length;
+			newPolygon.push(polygon[i]);
+		}
+
+		//setup triangulation vertices
+		let earpoly = [];
+		for(let e=0;e<polygon.length;e++){
+			earpoly.push(newPolygon[e].x);
+			earpoly.push(newPolygon[e].y);
+		}
+		//triangulate and convert back to vertex point system
+		let cut_tri = earcut(earpoly);
+
+		//console.log(cut_tri);
+		conv_tri = [];
+		for(let i=0;i<cut_tri.length;i+=3){
+			let t = [];
+			t.push(newPolygon[cut_tri[i]])
+			t.push(newPolygon[cut_tri[i+1]])
+			t.push(newPolygon[cut_tri[i+2]])
+			conv_tri.push(t);
+		}
+
+		if(triangles == null || !sameTriangulation(triangles,conv_tri))
+			break;
+
+	}
 
 	triangles = conv_tri;
 	return conv_tri;
