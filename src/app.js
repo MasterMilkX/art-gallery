@@ -20,7 +20,10 @@ function ver(x,y,c="#565656"){
 	this.equals = function(o){
 		return (this.x == o.x) && (this.y == o.y);
 	}
+
 }
+ver.prototype.toString = function str(){return "(" + this.x + "," + this.y + ")";}
+
 //line segment class (a and b are vertices from the vertex class)
 function seg(a,b){
 	//order the points from top-left most to bottom-right most
@@ -46,6 +49,8 @@ function seg(a,b){
 		return a.equals(o.a) && b.equals(o.b);
 	}
 }
+seg.prototype.toString = function seg_str(){return this.a.toString() + " -- " + this.b.toString();}
+
 var ghostVert = new ver(-1,-1);
 var ghostSeg = null;
 
@@ -175,8 +180,8 @@ function outlineTriangle(t){
 
 
 //clears the entire grid of vertices and segments
-function clearGrid(){
-	if(confirm("Are you sure you want to clear the grid?")){
+function clearGrid(skip=false){
+	if(skip || confirm("Are you sure you want to clear the grid?")){
 		verticeSet = [];
 		lineSegSet = [];
 		segMatrix = new WeakMap();
@@ -186,6 +191,8 @@ function clearGrid(){
 		polygonStats();
 		resetGuards();
 		resetVerticeColors();
+		selVert = null;
+		selSeg = null;
 	}
 }
 
@@ -455,6 +462,7 @@ function resetVerticeColors(){
 //create a line segment from vertex a to vertex b
 function addLineSegment(a,b){
 	let l = new seg(a,b);
+	l.valid = true;
 	lineSegSet.push(l);
 	segMatrix.get(a).push(l);
 	segMatrix.get(b).push(l);
@@ -484,10 +492,12 @@ function segmentExists(a,b){
 //get the segment with the same endpoints
 function getSegment(a,b){
 	let fakeSeg = new seg(a,b);
+	let fs =  fakeSeg.toString();
 	let segSet = segMatrix.get(a);
 	for(let s=0;s<segSet.length;s++){
 		let l = segSet[s];
-		if(l.equals(fakeSeg))
+		let ls = l.toString();
+		if(ls == fs)
 			return l;
 	}
 	return null;
@@ -613,6 +623,39 @@ function on_line(v){
 }
 
 
+//forms lines around all of the vertices in the order they were placed in
+function connectVertices(){
+	if(!window.confirm("Connect all vertices in the order they were placed?"))
+		return;
+
+	//remove any old segments
+	while(lineSegSet.length > 0){
+		let s = lineSegSet.pop();
+		let sa = segMatrix.get(s.a)
+		sa.splice(sa.indexOf(s),1);
+		let sb = segMatrix.get(s.b)
+		sb.splice(sb.indexOf(s),1);
+	}
+
+	//make new segments from the vertices placed
+	let c = 0;
+	for(let i=1;i<=verticeSet.length;i++){
+		let a = verticeSet[i-1];
+		let b = verticeSet[i%verticeSet.length];
+		if(!segmentExists(a,b)){			//if a segment is not already made
+			let ns = new seg(a,b);
+			if(!intersectsAny(ns) && segMatrix.get(a).length < 2 && segMatrix.get(b).length < 2){			//make sure the current segment doesn't intersect anything
+				addLineSegment(verticeSet[i-1],verticeSet[i%verticeSet.length]);
+				ghostSeg = null;
+				selVert = null;
+				c++;
+			}
+		}else{
+			console.log("seg exists");
+		}
+	}
+}
+
 
 // POLYGONS
 
@@ -737,12 +780,6 @@ function sameTriangulation(t1,t2){
 	return true;
 }
 
-function shuffleArr(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
 let rs = 0;
 
 //triangulates the polygon
@@ -754,7 +791,7 @@ function triangulate(){
 
 	let conv_tri = [];
 	
-
+	//try 100 times to make a new triangulation
 	for(let f=0;f<100;f++){
 
 		//randomize start position of polygon for different triangulations
@@ -819,6 +856,7 @@ function color3(){
 			}
 		}
 
+		//iterate over available colors to color each triangle
 		let c = 0;
 		for(let i=0;i<t1.length;i++){
 			if(t1[i].color != "#000")	//already colored so skip
@@ -919,6 +957,7 @@ function activateGuards(color){
 	activeGuardColor = color;
 }
 
+//clear all guard and vertice colorings
 function resetGuards(){
 	activeGuardColor = "";
 	guardSet = null;
@@ -964,6 +1003,11 @@ document.body.addEventListener("keydown", function (e) {
 	//delete (backspace or D)
 	if(([8,68].indexOf(e.keyCode) > -1)){
 		deleteAction();
+	}
+
+	//connect all segments
+	if(e.keyCode == 65){
+		connectVertices();
 	}
 });
 
