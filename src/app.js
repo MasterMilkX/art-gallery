@@ -384,7 +384,7 @@ function moveGhosts(ev){
   		ghostSeg = new seg(selVert,vb);
 
   		//determine if a valid segment (point has <2 segments already and does not intersect another line)
-  		if((segMatrix.get(selVert).length >= 2 || segMatrix.get(vb).length >= 2) || intersectsAny(ghostSeg)){
+  		if((segMatrix.get(selVert).length >= 2 || segMatrix.get(vb).length >= 2) || crosses(ghostSeg)){
   			ghostSeg.valid = false;
   		}else{
   			ghostSeg.valid = true;
@@ -503,6 +503,11 @@ function getSegment(a,b){
 	return null;
 }
 
+//check if a point crosses a line or thru a vertex
+function crosses(s){
+	return intersectsAny(s) || thruAnyPt(s);
+}
+
 //checks if a line intersects any other line
 function intersectsAny(s){
 	for(let i=0;i<lineSegSet.length;i++){
@@ -538,6 +543,34 @@ function intersects(m,n){
 		return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);		//point is on both line segments and not out of bounds
 	}
 }
+
+//check if line passes through a point
+function thruPt(l,v){
+	let m = lineSlope(l);
+	let b = l.a.y - m*(l.a.x) //y = mx + b
+	return v.y == Math.round(m*v.x + b) && inBounds(l,v);		//round because all coords are integers
+}
+
+//check if a vertice is in the bounds of a line segment
+function inBounds(l,v){
+	let x1 = l.a.x > l.b.x ? l.b.x : l.a.x;
+	let x2 = x1 == l.a.x ? l.b.x : l.a.x;
+	let y1 = l.a.y > l.b.y ? l.b.y : l.a.y;
+	let y2 = y1 == l.a.y ? l.b.y : l.a.y;
+	return x1 <= v.x && v.x <= x2 && y1 <= v.y && v.y <= y2;
+}
+
+//check if line passes through any point
+function thruAnyPt(l){
+	for(let v=0;v<verticeSet.length;v++){
+		let vi = verticeSet[v];
+		if(!vi.equals(l.a) && !vi.equals(l.b) && thruPt(l,vi)){
+			console.log("thru: " + vi.toString())
+			return true;
+		}
+	}
+	return false;
+}	
 
 //replaces a 3-verticed straight line segment and makes it into a 2-verticed single line segment
 function removeStraight(){
@@ -622,6 +655,21 @@ function on_line(v){
 	return false;
 }
 
+//attempts to create a line segment
+function trySegment(a,b){
+	let ns = new seg(a,b);
+	if(!crosses(ns) && segMatrix.get(a).length < 2 && segMatrix.get(b).length < 2){			//make sure the current segment doesn't intersect anything
+		addLineSegment(a,b);
+		ghostSeg = null;
+		selVert = null;
+		return true;
+	}
+	return false;
+}
+
+
+// POLYGONS
+
 
 //forms lines around all of the vertices in the order they were placed in
 function connectVertices(){
@@ -638,26 +686,16 @@ function connectVertices(){
 	}
 
 	//make new segments from the vertices placed
-	let c = 0;
 	for(let i=1;i<=verticeSet.length;i++){
 		let a = verticeSet[i-1];
 		let b = verticeSet[i%verticeSet.length];
 		if(!segmentExists(a,b)){			//if a segment is not already made
-			let ns = new seg(a,b);
-			if(!intersectsAny(ns) && segMatrix.get(a).length < 2 && segMatrix.get(b).length < 2){			//make sure the current segment doesn't intersect anything
-				addLineSegment(verticeSet[i-1],verticeSet[i%verticeSet.length]);
-				ghostSeg = null;
-				selVert = null;
-				c++;
-			}
-		}else{
-			console.log("seg exists");
+			trySegment(a,b);
 		}
 	}
 }
 
 
-// POLYGONS
 
 //check if all of the points in the vertice set form a valid polygon
 function makePolygon(){
@@ -753,7 +791,19 @@ function deleteAction(){
 //update information about the polygon
 function polygonStats(){
 	document.getElementById("verticeCt").innerHTML = "N: " + verticeSet.length;
-	document.getElementById("guardCt").innerHTML = "Sufficient Guards: " + suffGuards;
+	document.getElementById("guardCt").innerHTML = "Sufficient #: " + suffGuards;
+	if(guardSet != null){
+		let sgtxt = [];
+		let colTxt = {"#f00":"Red","#0f0":"Green","#00f":"Blue"};
+		for(let c=0;c<3;c++){
+			if(guardSet[triColor[c]].length == suffGuards)
+				sgtxt.push(colTxt[triColor[c]]);
+		}
+		document.getElementById("guardColors").innerHTML = "(" + sgtxt.join(", ") + ")";
+	}else{
+		document.getElementById("guardColors").innerHTML = "";
+	}
+	
 }
 
 
@@ -870,6 +920,7 @@ function color3(){
 	}
 
 	sortGuards();
+	polygonStats();
 
 }
 
@@ -1008,6 +1059,13 @@ document.body.addEventListener("keydown", function (e) {
 	//connect all segments
 	if(e.keyCode == 65){
 		connectVertices();
+	}
+
+	//connect last 2 segments
+	if(e.keyCode == 83){
+		let a = verticeSet[verticeSet.length-2]
+		let b = verticeSet[verticeSet.length-1]
+		trySegment(a,b);
 	}
 });
 

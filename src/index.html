@@ -83,13 +83,16 @@
 			<div id='settings'>
 				<div style='display: flex;height:100%'>
 					<div class='inner' id='mapConfig'>
-						<div style='margin-top:0.5em;font-size:1.5em'>Cell Size</div>
+						<div style='margin-top:0.25em;font-size:1.2em;font-weight: bold'>Cell Size</div>
 						<button onclick='setCanvasSize("small",this)'>Small</button>
 						<button onclick='setCanvasSize("medium",this)'>Medium</button>
 						<button onclick='setCanvasSize("large",this)' style='background-color:#ff0'>Large</button>
-						<div style='display:inline-flex;width:100%;margin-top:1em'>
-							<div id='verticeCt' style='width:40%'>N: 0</div>
-							<div id='guardCt' style='width:60%'>Sufficient Guards: 0</div>
+						<div style='display:block;width:100%;margin-top:0.5em'>
+							<div style='width:100%;display: inline-flex'>
+								<div id='verticeCt' style='width:40%'>N: 0</div>
+								<div id='guardCt' style='width:60%'>Sufficient Guards: 0</div>
+							</div>
+							<div id='guardColors' style='width:55%;margin-top:0.2em;margin-left:45%'></div>
 						</div>
 					</div>
 					<div class='inner' id='values'>
@@ -114,6 +117,7 @@
 							<button onclick='resetGuards()'>Show All Guards</button>
 							<a href="#" class="button " id="downloadArt" download="art-gallery.png">Download IMG</a>
 						</div>
+
 					</div>
 				</div>
 			</div>
