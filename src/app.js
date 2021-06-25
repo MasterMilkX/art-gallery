@@ -796,7 +796,7 @@ function polygonStats(){
 		let sgtxt = [];
 		let colTxt = {"#f00":"Red","#0f0":"Green","#00f":"Blue"};
 		for(let c=0;c<3;c++){
-			if(guardSet[triColor[c]].length == suffGuards)
+			if(guardSet[triColor[c]].length <= suffGuards)
 				sgtxt.push(colTxt[triColor[c]]);
 		}
 		document.getElementById("guardColors").innerHTML = "(" + sgtxt.join(", ") + ")";
@@ -1055,17 +1055,17 @@ document.body.addEventListener("keydown", function (e) {
 	if(([8,68].indexOf(e.keyCode) > -1)){
 		deleteAction();
 	}
-
-	//connect all segments
+ 
+	//connect all segments [a]
 	if(e.keyCode == 65){
 		connectVertices();
 	}
 
-	//connect last 2 segments
+	//connect last 2 segments [s]
 	if(e.keyCode == 83){
 		let a = verticeSet[verticeSet.length-2]
 		let b = verticeSet[verticeSet.length-1]
-		trySegment(a,b);
+		console.log(trySegment(a,b));
 	}
 });
 

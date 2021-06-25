@@ -79,9 +79,13 @@
 		<div style='font-size: 2em'>Art Gallery Visualizer</div>
 		<div style='font-size: 1em;color:#787878;margin-bottom: 1em'>by M Charity</div>
 		<div id='container'>
+			<!-- DRAWING GRID -->
 			<canvas id='gridCanvas'>Unable to display canvas. Please change your browser.</canvas>
+
+			<!-- setting/controls  -->
 			<div id='settings'>
 				<div style='display: flex;height:100%'>
+					<!-- LEFT SETTING -->
 					<div class='inner' id='mapConfig'>
 						<div style='margin-top:0.25em;font-size:1.2em;font-weight: bold'>Cell Size</div>
 						<button onclick='setCanvasSize("small",this)'>Small</button>
@@ -95,6 +99,7 @@
 							<div id='guardColors' style='width:55%;margin-top:0.2em;margin-left:45%'></div>
 						</div>
 					</div>
+					<!-- MIDDLE SETTINGS -->
 					<div class='inner' id='values'>
 						<div style='margin-top: 0.5em'>
 						<button onclick='makePolygon()' style='margin-top: 1em'>Make Polygon</button>
@@ -106,6 +111,7 @@
 						</div>
 						<div id='errorMsg'></div>
 					</div>
+					<!-- RIGHT SETTINGS -->
 					<div class='inner' style='border-right:none'>
 						<div style='margin-top:1.5em'>
 							<button id='redGuard' style='background-color: #E75050' onclick='activateGuards("#f00")'>Red Guards</button>
@@ -121,6 +127,7 @@
 					</div>
 				</div>
 			</div>
+			<div style='margin-top: 0.5em'><b>Shortcuts:</b><br> [A] - Connect all vertices | [S] - Create a segment between the last 2 vertices | [D] - Delete a vertex/segment </div>
 			<div id='debug'></div>
 		</div>
 		<script src='app.js'></script>
