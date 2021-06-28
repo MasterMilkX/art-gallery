@@ -6,12 +6,12 @@ Computational Geometry 2021 Extended Summer project implementing a interactive w
 ## Background
 ---
 ### Introduction
-The art gallery problem was first posed by Victor Klee and Vasek Chvatal in 1973. It describes a situation of stationing watchmen or cameras (guards) in an art gallery while requiring the minimum number of guards that can observe the entire gallery. Chvatal's inductive proof showed that lower-bound(n/3) guards are always sufficient for coverage of a simple polygon. Steve Fisk later simplified Chvatal's proof to a 3-coloring triangulation.
+The art gallery problem was first posed by Victor Klee and Vasek Chvatal in 1973. It describes a situation of stationing watchmen or cameras (guards) in an art gallery while requiring the minimum number of guards that can observe the entire gallery. Chvatal's inductive proof showed that floor(n/3) guards are always sufficient for coverage of a simple polygon. Steve Fisk later simplified Chvatal's proof to a 3-coloring triangulation.
 
 ### Project Description
 This project is an interactive application that visualizes Fisk's 3-coloring triangulation proof for the art gallery problem. The core features of this interactive web app includes:
 1. Allow the user to place vertices and draw line segments on a contained grid-space to create a simple polygon
-2. Display a multiple possibilities of sufficient guard placements (lower-bound(n/3)) on the vertices of the polygon that would show coverage of the polygon based on 3-coloring of the vertices.
+2. Display a multiple possibilities of sufficient guard placements (floor(n/3)) on the vertices of the polygon that would show coverage of the polygon based on 3-coloring of the vertices.
 3. The ability to save the image of the designed polygon and the guard placements. 
 
 ![screenshot](screenshots/webapp2.png)
@@ -29,6 +29,7 @@ There are 2 options for running the code:
 
 ### How to Use the App
 ![screenshot](screenshots/tutorial.gif)
+
 To create a simple polygon, triangulate it, place the guards, and view possible guard placements, follow these instructions:
 1. **Click a point on the grid to place a vertex** - the potential vertex will be colored in a transparent gray before being placed.
 2. To connect 2 vertices together via a line segmenet, **click on one of the endpoints** (it will turn green when selected) and the hover over its potential adjacent vertex (the adjacent vertex will turn orange when hovered over). A dotted line will appear in between the vertices. **Click the adjacent vertex to place the line**. 
@@ -62,13 +63,15 @@ To create a simple polygon, triangulate it, place the guards, and view possible 
 * **Vertices and Segments** - Classes are made for the vertices and segments. Vertices are stored by their X-Y coordinates and compared by them for equivalency. Segments are defined by reference to these vertices (*a* being the top-left most point and *b* being the bottom-right most point and automatically sorted as such.)  The set of vertices and segments are stored in arrays in the order they were created. A *WeakMap* native JS data object stores a hashmap of the vertices and segments stored with the vertex as the key and a list of their connecting segments as values. Additions, deletions, and searches are done by reference to this hashmap.
 * **Intersections, collisions, and adjacency** - Intersections of lines or collisions between vertices are calculated using either lookups or through linear algebra to keep validity of the vertices and segments placed and created. 3 adjacent vertices connected in a row delete the middle vertex. Vertices are checked if they are being placed on a line segment to prevent this. Adjacent vertices are found via lookup in the hashmap. 
 * **Polygon formation and triangulation** - A polygon is formed iff all vertices are connected, each vertex has exactly 2 line segments, there are at least 3 vertices on the map, no line segments intersect each other, there exists no row of 3 or more vertices, and no stray vertex lies inside or outside of a polygon. Triangulation is performed by the [Earcut](https://github.com/mapbox/earcut) JS library - the only outsourced code in the project. The X-Y coordinates of each vertex in the order they are placed around the polygon are passed to the *"earcut()"* function and indices of the vertices are returned back in sets of 3 - making the triangles for the polygon. Different triangulations can be made based on the starting vertex passed. 
-* ![screenshot](screenshots/output_tricolor.png)
+   ![screenshot](screenshots/output_tricolor.png)
 * **3-coloring and guard placement** - To perform 3-coloring, a random triangle is selected and colored using the three colors red, green, and blue. Repeating onward, the triangle with the most colored vertices is found and its remaining uncolored vertices are colored until every vertex in the polygon has been colored. This results in a possible 3-coloring of the triangulation where no triangle has 2 or more of same colored vertex. Based on Fisk's proof, the colored polygon can show the set of guards (red, green, or blue) that can view the entire polygon. This viewing area is demonstrated by showing the combined set of connected triangles for each vertex. Based on the triangulation performed by Earcut, there will always exists a coloring of at most (n/3) or less where the guards can sufficiently cover the polygon. 
-* ![screenshot](screenshots/tri_example.png)
+   ![screenshot](screenshots/tri_example.png)
 ---
 #### References and Acknowledgements
 [https://wild.maths.org/art-gallery-problem]
+
 [https://plus.maths.org/content/art-gallery-problem]
+
 [https://en.wikipedia.org/wiki/Art_gallery_problem]
 
 Except as described above, all the work on this project is my own. M Charity.
