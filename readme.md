@@ -6,12 +6,12 @@ Computational Geometry 2021 Extended Summer project implementing a interactive w
 ## Background
 ---
 ### Introduction
-The art gallery problem was first posed by Victor Klee and Vasek Chvatal in 1973. It describes a situation of stationing watchmen or cameras (guards) in an art gallery while requiring the minimum number of guards that can observe the entire gallery. Chvatal's inductive proof showed that lower-bound(n/3) guards are always sufficient for coverage of a simple polygon. Steve Fisk later simplified Chvatal's proof to a 3-coloring triangulation.
+The art gallery problem was first posed by Victor Klee and Vasek Chvatal in 1973. It describes a situation of stationing watchmen or cameras (guards) in an art gallery while requiring the minimum number of guards that can observe the entire gallery. Chvatal's inductive proof showed that floor(n/3) guards are always sufficient for coverage of a simple polygon. Steve Fisk later simplified Chvatal's proof to a 3-coloring triangulation.
 
 ### Project Description
 This project is an interactive application that visualizes Fisk's 3-coloring triangulation proof for the art gallery problem. The core features of this interactive web app includes:
 1. Allow the user to place vertices and draw line segments on a contained grid-space to create a simple polygon
-2. Display a multiple possibilities of sufficient guard placements (lower-bound(n/3)) on the vertices of the polygon that would show coverage of the polygon based on 3-coloring of the vertices.
+2. Display a multiple possibilities of sufficient guard placements (floor(n/3)) on the vertices of the polygon that would show coverage of the polygon based on 3-coloring of the vertices.
 3. The ability to save the image of the designed polygon and the guard placements. 
 
 ![screenshot](screenshots/webapp2.png)

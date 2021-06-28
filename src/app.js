@@ -842,19 +842,16 @@ function triangulate(){
 	let conv_tri = [];
 	
 	//try 100 times to make a new triangulation
-	for(let f=0;f<100;f++){
+	for(let f=0;f<polygon.length;f++){
 
 		//randomize start position of polygon for different triangulations
-		let randStart = 0;
-		do{
-			randStart = Math.floor(Math.random()*polygon.length);
-		}while(randStart == rs);
-		rs = randStart;
+		rs+=1;
+		rs = (rs >= polygon.length ? 0 : rs); 
 
 		//make new polygon from alternate starting position
 		let newPolygon = [];
 		for(let e=0;e<polygon.length;e++){
-			let i = (e+randStart) % polygon.length;
+			let i = (e+rs) % polygon.length;
 			newPolygon.push(polygon[i]);
 		}
 
