@@ -1,6 +1,6 @@
 # [Art Gallery Visualization](https://mastermilkx.github.io/art-gallery/)
 ### M Charity
-Computational Geometry 2021 Extended Summer project implementing a interactive web app for the Art Gallery problem. 
+Computational Geometry 2021 project implementing a interactive web app for the Art Gallery problem. 
 ![screenshot](screenshots/webapp1.png)
 
 ## Background
