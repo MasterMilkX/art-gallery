@@ -841,10 +841,10 @@ function triangulate(){
 
 	let conv_tri = [];
 	
-	//try 100 times to make a new triangulation
+	//go over every vertex in the polygon to find a new starting point for the triangulation
 	for(let f=0;f<polygon.length;f++){
 
-		//randomize start position of polygon for different triangulations
+		//iterate over start position
 		rs+=1;
 		rs = (rs >= polygon.length ? 0 : rs); 
 
@@ -874,6 +874,7 @@ function triangulate(){
 			conv_tri.push(t);
 		}
 
+		//if a new triangulation, stop the loop
 		if(triangles == null || !sameTriangulation(triangles,conv_tri))
 			break;
 
